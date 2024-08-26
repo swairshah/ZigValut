@@ -1,4 +1,10 @@
 
+## Part 1: The REPL
+
+Corresponding part in the C version of this book is [here](https://cstack.github.io/db_tutorial/parts/part1.html). We will also need to know a little bit about memory allocation in Zig. One of the features of the language is that when we need to allocate memory on heap (a la malloc in C) we need to pass around an instance of an allocator to the function that needs to allocate memory. This helps in debugging the progrem, if a function doesn't accept allocater as an argument then its not allocating any memory on the heap. This is an nice introduction to memory management in Zig : https://pedropark99.github.io/zig-book/Chapters/01-memory.html .
+
+
+### Implementing the REPL
 SQLite (and the toy C version that we are basic this implementation off of) is roughly stuctured this way:
 
 ```
@@ -86,3 +92,61 @@ const InputBuffer = struct {
 
 ```
 
+
+_______________
+
+Full zig code for part 1:
+
+```
+const std = @import("std");
+
+const InputBuffer = struct {
+    buffer: []u8,
+    buffer_length: usize,
+    input_length: usize,
+
+    pub fn init(allocator: *const std.mem.Allocator) !InputBuffer {
+        const buffer = try allocator.alloc(u8, 1024);
+        return InputBuffer{
+            .buffer = buffer,
+            .buffer_length = 0,
+            .input_length = 0,
+        };
+    }
+
+    pub fn read_line(self: *InputBuffer) ![]u8 {
+        const stdin = std.io.getStdIn().reader();
+
+        const line = try stdin.readUntilDelimiterOrEof(self.buffer, '\n');
+
+        if (line) |l| {
+            self.input_length = l.len;
+            self.buffer_length = l.len;
+            return l;
+        } else {
+            return error.EndOfStream;
+        }
+    }
+};
+
+pub fn main() !void {
+
+    const allocator = std.heap.page_allocator;
+    var input_buffer = try InputBuffer.init(&allocator);
+    defer allocator.free(input_buffer.buffer);
+
+    while (true) {
+        std.debug.print("db > ", .{});
+        const line = try input_buffer.read_line();
+        
+        if (std.mem.eql(u8, std.mem.trim(u8, line, &std.ascii.whitespace), "exit") or
+            std.mem.eql(u8, std.mem.trim(u8, line, &std.ascii.whitespace), "quit")) {
+            std.debug.print("Exiting...\n", .{});
+            break;
+        }
+        
+        std.debug.print("{s}\n", .{line});
+    }
+
+}
+```
