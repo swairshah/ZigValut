@@ -1,6 +1,7 @@
 
 SQLite (and the toy C version that we are basic this implementation off of) is roughly stuctured this way:
 
+```
 +---------------+
 |   Tokenizer   |
 +-------v-------+
@@ -28,15 +29,18 @@ SQLite (and the toy C version that we are basic this implementation off of) is r
 +---------------+
 | OS Interface  |
 +---------------+
+```
 
 Starting from the user interface we first implement repl (the thing you get when you hit `sqlite3` and get `>` to type your sql queries into).
 
 So the c code creates a struct to store the user input to the repl:
-```typedef struct {
+```
+typedef struct {
   char* buffer;
   size_t buffer_length;
   ssize_t input_length;
-} InputBuffer;```
+} InputBuffer;
+```
 
 In zig it turns out the we need to do 
 ```
